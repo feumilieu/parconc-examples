@@ -12,7 +12,10 @@ import Data.ByteString (ByteString)
 getURL :: String -> IO ByteString
 getURL url = do
   Network.Browser.browse $ do
+    setAllowRedirects True
+    setMaxRedirects $ Just 20
     setCheckForProxy True
+    -- setDebugLog $ Just "HTTP.log"
     setDebugLog Nothing
     setOutHandler (const (return ()))
     (_, rsp) <- request (getRequest' (escapeURIString isUnescapedInURI url))

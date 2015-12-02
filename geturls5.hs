@@ -1,3 +1,7 @@
+#!/usr/bin/env stack
+-- stack --resolver lts-3.15 --install-ghc runghc --package HTTP
+{-# OPTIONS_GHC -Wall #-}
+
 import Control.Concurrent
 import GetURL
 import qualified Data.ByteString as B
@@ -5,11 +9,16 @@ import Text.Printf
 import Control.Monad
 
 -- <<main
-sites = ["http://www.google.com",
+sites :: [[Char]]
+sites = [
          "http://www.bing.com",
-         "http://www.yahoo.com",
-         "http://www.wikipedia.com/wiki/Spade",
-         "http://www.wikipedia.com/wiki/Shovel"]
+         "http://www.google.com",
+         "http://yandex.ru",
+         "http://chimera.labs.oreilly.com/books/1230000000929/ch08.html",
+         "http://chimera.labs.oreilly.com/books/1230000000929/ch09.html"
+         -- "http://www.wikipedia.com/wiki/Spade",
+         -- "http://www.wikipedia.com/wiki/Shovel"
+        ]
 
 main :: IO ()
 main = do
