@@ -32,12 +32,55 @@ data Async a = Async ThreadId (MVar (Either SomeException a))
 -- >>
 
 -- <<async
+-- is it racy?
 async :: IO a -> IO (Async a)
 async action = do
    m <- newEmptyMVar
-   t <- forkIO (do r <- try action; putMVar m r)
+   t <- forkIO $ do
+      r <- try action
+      -- threadDelay 1000000
+      putMVar m r
    return (Async t m)
 -- >>
+
+-- is it racy?
+async'' :: IO a -> IO (Async a)
+async'' action = do
+   m <- newEmptyMVar
+   t <- forkIO $ do
+      r <- try $ do
+        ret <- action
+        threadDelay 1000000
+        return ret
+      putMVar m r
+   return (Async t m)
+
+-- should be OK
+async''' :: IO a -> IO (Async a)
+async''' action = do
+   m <- newEmptyMVar
+   t <- mask_ $ forkIOWithUnmask $ \restore -> do
+      r <- try $ restore action
+      uninterruptibleMask_ $ threadDelay 1000000
+      putMVar m r
+   return (Async t m)
+
+-- should be OK and good?
+-- from Control.Exception documentation:
+-- There's an implied mask around every exception handler in a call to one of the catch family of functions.
+-- This is because that is what you want most of the time - it eliminates a common race condition
+-- in starting an exception handler, because there may be no exception handler on the stack to handle another
+-- exception if one arrives immediately. If asynchronous exceptions are masked on entering the handler, though,
+-- we have time to install a new exception handler before being interrupted.
+--
+-- UPD: later in the chapter "Catching Asynchronous Exceptions" this explained
+-- UPD2: no! an asynchronous exeptions may happen in the childthread just before the first IO action.
+async' :: IO a -> IO (Async a)
+async' action = do
+   m <- newEmptyMVar
+   t <- forkIO $
+      (do r <- action; threadDelay 1000000; putMVar m (Right r)) `catch` (\ e -> putMVar m (Left (e :: SomeException)))
+   return (Async t m)
 
 -- <<waitCatch
 waitCatch :: Async a -> IO (Either SomeException a)
@@ -67,7 +110,7 @@ timeDownload url = timeit $ getURL url
 -- <<main
 main :: IO ()
 main = do
-  as <- mapM (async . timeDownload) sites                     -- <1>
+  as <- mapM (async' . timeDownload) sites                     -- <1>
 
   void $ forkIO $ do                                                 -- <2>
      void $ hSetBuffering stdin NoBuffering

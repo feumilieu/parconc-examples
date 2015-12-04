@@ -1,3 +1,7 @@
+#!/usr/bin/env stack
+-- stack --resolver lts-3.15 --install-ghc runghc --package HTTP
+{-# OPTIONS_GHC -Wall #-}
+
 {-# LANGUAGE BangPatterns #-}
 import System.IO
 import System.IO.Error
@@ -5,8 +9,9 @@ import System.Environment
 import Control.Exception as E
 
 -- <<main
+main :: IO ()
 main = do
-  fs <- getArgs
+  ff <- getArgs
   let
      loop !n [] = return n
      loop !n (f:fs)
@@ -19,6 +24,6 @@ main = do
                s <- hGetContents h
                loop (n + length (lines s)) fs
 
-  n <- loop 0 fs
+  n <- loop 0 ff
   print n
 -- >>

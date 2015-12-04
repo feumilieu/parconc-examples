@@ -37,6 +37,7 @@ data Async a = Async ThreadId (MVar (Either SomeException a))
 -- <<forkFinally
 forkFinally :: IO a -> (Either SomeException a -> IO ()) -> IO ThreadId
 forkFinally action fun =
+  -- restore is used in another thread.  Is it ok?  Should we use forkIOWithUnmask?
   mask $ \restore ->
     forkIO (do r <- try (restore action); fun r)
 -- >>
